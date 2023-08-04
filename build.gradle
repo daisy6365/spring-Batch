@@ -13,6 +13,7 @@ java {
 
 configurations {
     compileOnly {
+
         extendsFrom annotationProcessor
     }
 }
@@ -23,6 +24,16 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-batch'
+    implementation 'org.springframework.batch:spring-batch-integration'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-quartz'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+    implementation 'com.thoughtworks.xstream:xstream:1.4.16'
+    runtimeOnly 'mysql:mysql-connector-java'
+    runtimeOnly 'com.h2database:h2'
+
+
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
