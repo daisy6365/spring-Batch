@@ -34,6 +34,7 @@ public class JobRunner implements ApplicationRunner {
         // 하나의 Job에 존재 가능한 여러개의 JobInstance를 구분하기 위한 용도
         JobParameters jobParameters = new JobParametersBuilder()
                 .addString("name", "user1")
+
                 .toJobParameters();
 
         // spring boot가 자동으로 배치를 실행하지 않게끔 해야함

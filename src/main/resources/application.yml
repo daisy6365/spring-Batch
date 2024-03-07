@@ -15,9 +15,5 @@ spring:
   batch:
     jdbc:
       initialize-schema: always
-#    job:
-#      enabled: false # 배치가 자동으로 실행되는 것을 막음
-
-
-
-
+    job:
+      enabled: false # 배치가 자동으로 실행되는 것을 막음
