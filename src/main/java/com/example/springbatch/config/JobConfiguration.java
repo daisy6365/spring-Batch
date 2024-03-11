@@ -1,5 +1,6 @@
 package com.example.springbatch.config;
 
+import com.example.springbatch.tasklet.CustomTasklet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.*;
@@ -45,16 +46,7 @@ public class JobConfiguration {
         return new StepBuilder("step1", jobRepository)
                 // tasklet 방식 호출
                 // Tasklet 객체 생성
-                .tasklet((contribution, chunkContext) -> {
-                    JobParameters jobParameters = contribution.getStepExecution().getJobParameters();
-                    log.info("name = {}", jobParameters.getString("name"));
-                    log.info("seq = {}", jobParameters.getLong("seq"));
-                    log.info("date = {}", jobParameters.getDate("date"));
-                    log.info("age = {}", jobParameters.getDouble("age"));
-
-                    contribution.setExitStatus(ExitStatus.COMPLETED);
-                    return RepeatStatus.FINISHED; // step 종료
-                }, platformTransactionManager).build();
+                .tasklet(new CustomTasklet(), platformTransactionManager).build();
     }
 
     @Bean
