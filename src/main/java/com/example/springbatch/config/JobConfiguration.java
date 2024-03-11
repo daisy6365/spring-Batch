@@ -64,9 +64,18 @@ public class JobConfiguration {
                     Map<String, Object> jobParameters = chunkContext.getStepContext().getJobParameters();
 
                     log.info("jobParameters = {}", jobParameters.toString());
+                    // jobParameters = {date=Mon Mar 11 14:57:41 KST 2024, name=user1, seq=2, age=16.5}
                     log.info("step2 is executed.");
                     contribution.setExitStatus(ExitStatus.COMPLETED);
+
+//                    throw new RuntimeException("step2 has failed"); // FAILED를 위해 일부러 throw
                     return RepeatStatus.FINISHED;
+
+                    /**
+                     * step이 모두 정상적으로 종료 -> JOB status : [COMPLETED]
+                     * [COMPLETE] : JobInstance 실행 불가 → JobExecution 생성 X => 재실행 불가
+                     * [FAILED] : JobInstance 실행 가능 → JobExecution 생성 O => 재실행 가능
+                     */
                 }, platformTransactionManager).build();
     }
 }

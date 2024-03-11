@@ -9,6 +9,8 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
+
 @Component // JobRunner 자체가 bean으로 등록되어야 함 -> run() 메소드 호출됨
 /**
  * ApplicationRunner : Application 실행 시첨에 run() 실행
@@ -34,7 +36,9 @@ public class JobRunner implements ApplicationRunner {
         // 하나의 Job에 존재 가능한 여러개의 JobInstance를 구분하기 위한 용도
         JobParameters jobParameters = new JobParametersBuilder()
                 .addString("name", "user1")
-
+                .addLong("seq", 2L)
+                .addDate("date", new Date())
+                .addDouble("age", 16.5)
                 .toJobParameters();
 
         // spring boot가 자동으로 배치를 실행하지 않게끔 해야함
