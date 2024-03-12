@@ -19,12 +19,12 @@ public class ExecutionContextTasklet2 implements Tasklet {
         log.info("jobName : {}", jobExecutionContext.get("jobName")); // job
         log.info("stepName : {}", stepExecutionContext.get("stepName")); // null
 
-//        String stepName =  chunkContext.getStepContext().getStepExecution().getStepName();
-//
-//        // StepExecution의 ExecutionContext stepName 존재 X -> 새로운 stepName 저장
-//        if(stepExecutionContext.get("stepName") == null){
-//            stepExecutionContext.put("stepName", stepName);
-//        }
+        String stepName =  chunkContext.getStepContext().getStepExecution().getStepName();
+
+        // StepExecution의 ExecutionContext stepName 존재 X -> 새로운 stepName 저장
+        if(stepExecutionContext.get("stepName") == null){
+            stepExecutionContext.put("stepName", stepName);
+        }
 
         return RepeatStatus.FINISHED;
     }

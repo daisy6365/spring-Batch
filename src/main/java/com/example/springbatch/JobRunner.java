@@ -34,16 +34,16 @@ public class JobRunner implements ApplicationRunner {
 
         // 1 : 1 = JobParameter : JobInstance
         // 하나의 Job에 존재 가능한 여러개의 JobInstance를 구분하기 위한 용도
-        JobParameters jobParameters = new JobParametersBuilder()
-                .addString("name", "user1")
-                .addLong("seq", 2L)
-                .addDate("date", new Date())
-                .addDouble("age", 16.5)
-                .toJobParameters();
+//        JobParameters jobParameters = new JobParametersBuilder()
+//                .addString("name", "user1")
+//                .addLong("seq", 2L)
+//                .addDate("date", new Date())
+//                .addDouble("age", 16.5)
+//                .toJobParameters();
 
         // spring boot가 자동으로 배치를 실행하지 않게끔 해야함
         // 내가 원하는 대로 Job execution control
-        jobLauncher.run(job, jobParameters);
+//        jobLauncher.run(job, jobParameters);
 
     }
 }
