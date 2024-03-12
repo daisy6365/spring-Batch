@@ -1,6 +1,6 @@
 package com.example.springbatch.config;
 
-import com.example.springbatch.tasklet.CustomTasklet;
+import com.example.springbatch.tasklet.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.*;
@@ -21,6 +21,12 @@ public class JobConfiguration {
 
     private final JobRepository jobRepository; //
     private final PlatformTransactionManager platformTransactionManager; //
+
+    private final ExecutionContextTasklet1 executionContextTasklet1;
+    private final ExecutionContextTasklet2 executionContextTasklet2;
+    private final ExecutionContextTasklet3 executionContextTasklet3;
+    private final ExecutionContextTasklet4 executionContextTasklet4;
+
     @Bean
     public Job job(){
         // Job 객체 생성
@@ -32,6 +38,8 @@ public class JobConfiguration {
         return new JobBuilder("job", jobRepository)
                 .start(step1()) // 최소 1개 이상의 step 구성
                 .next(step2()) // step 호출
+                .next(step3())
+                .next(step4())
                 .build();
     }
     @Bean
@@ -46,28 +54,44 @@ public class JobConfiguration {
         return new StepBuilder("step1", jobRepository)
                 // tasklet 방식 호출
                 // Tasklet 객체 생성
-                .tasklet(new CustomTasklet(), platformTransactionManager).build();
+                .tasklet(executionContextTasklet1, platformTransactionManager).build();
     }
 
     @Bean
     public Step step2(){
         return new StepBuilder("step2", jobRepository)
-                .tasklet((contribution, chunkContext) -> {
-                    Map<String, Object> jobParameters = chunkContext.getStepContext().getJobParameters();
+                .tasklet(executionContextTasklet2,platformTransactionManager)
+                .build();
+//                .tasklet((contribution, chunkContext) -> {
+//                    Map<String, Object> jobParameters = chunkContext.getStepContext().getJobParameters();
+//
+//                    log.info("jobParameters = {}", jobParameters.toString());
+//                    // jobParameters = {date=Mon Mar 11 14:57:41 KST 2024, name=user1, seq=2, age=16.5}
+//                    log.info("step2 is executed.");
+//                    contribution.setExitStatus(ExitStatus.COMPLETED);
+//
+////                    throw new RuntimeException("step2 has failed"); // FAILED를 위해 일부러 throw
+//                    return RepeatStatus.FINISHED;
+//
+//                    /**
+//                     * step이 모두 정상적으로 종료 -> JOB status : [COMPLETED]
+//                     * [COMPLETE] : JobInstance 실행 불가 → JobExecution 생성 X => 재실행 불가
+//                     * [FAILED] : JobInstance 실행 가능 → JobExecution 생성 O => 재실행 가능
+//                     */
+//                }, platformTransactionManager).build();
+    }
 
-                    log.info("jobParameters = {}", jobParameters.toString());
-                    // jobParameters = {date=Mon Mar 11 14:57:41 KST 2024, name=user1, seq=2, age=16.5}
-                    log.info("step2 is executed.");
-                    contribution.setExitStatus(ExitStatus.COMPLETED);
+    @Bean
+    public Step step3(){
+        return new StepBuilder("step3", jobRepository)
+                .tasklet(executionContextTasklet3, platformTransactionManager)
+                .build();
+    }
 
-//                    throw new RuntimeException("step2 has failed"); // FAILED를 위해 일부러 throw
-                    return RepeatStatus.FINISHED;
-
-                    /**
-                     * step이 모두 정상적으로 종료 -> JOB status : [COMPLETED]
-                     * [COMPLETE] : JobInstance 실행 불가 → JobExecution 생성 X => 재실행 불가
-                     * [FAILED] : JobInstance 실행 가능 → JobExecution 생성 O => 재실행 가능
-                     */
-                }, platformTransactionManager).build();
+    @Bean
+    public Step step4(){
+        return new StepBuilder("step4", jobRepository)
+                .tasklet(executionContextTasklet4, platformTransactionManager)
+                .build();
     }
 }

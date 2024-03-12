@@ -22,6 +22,9 @@ public class CustomTasklet implements Tasklet {
      */
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+        // Step 실행 -> StepExecution 생성
+        // StepExecution이 모두 정상적으로 완료 => JobExecution 정상 완료
+        // JobExecution : StepExecution = 1 : M
 
         log.info("step1 was executed.");
 
