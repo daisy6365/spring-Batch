@@ -7,7 +7,6 @@ import org.springframework.batch.core.*;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -19,8 +18,15 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JobConfiguration {
 
-    private final JobRepository jobRepository; //
+    /**
+     * Batch 작업 중의 정보를 저장하는 저장소 역할
+     * Job 실행 및 결과에 관련된 모든 meta data를 저장
+     * JobLauncher, Job, Step 구현체 내부에서 CRUD기능 처리
+     * 내부적으로 Transaction처리 해줌 -> @Transaction 불필요
+     */
+    private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager; //
+    private final JobRepositoryListener jobRepositoryListener;
 
     private final ExecutionContextTasklet1 executionContextTasklet1;
     private final ExecutionContextTasklet2 executionContextTasklet2;
@@ -40,6 +46,7 @@ public class JobConfiguration {
                 .next(step2()) // step 호출
                 .next(step3())
                 .next(step4())
+                .listener(jobRepositoryListener) // 리스너 등록
                 .build();
     }
     @Bean
@@ -74,7 +81,8 @@ public class JobConfiguration {
 //                    return RepeatStatus.FINISHED;
 //
 //                    /**
-//                     * step이 모두 정상적으로 종료 -> JOB status : [COMPLETED]
+//                     * step이 모두 정상적으로 종료
+//                     -> JOB status : [COMPLETED]
 //                     * [COMPLETE] : JobInstance 실행 불가 → JobExecution 생성 X => 재실행 불가
 //                     * [FAILED] : JobInstance 실행 가능 → JobExecution 생성 O => 재실행 가능
 //                     */
