@@ -11,8 +11,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.util.Map;
 
+/**
+ * BatchAutoConfigurationd
+ * -> BatchProperties에 Job의 Bean 이름 갖고있음
+ * -> JobLauncherApplicationRunner를 생성
+ * -> ApplicationArguments에 우리가 실행하라고 설정한 Job의 이름 담겨 있음 (JobArguments)
+ *      -> Arguments에 따라 Job 동시에 여러개 실행 가능
+ * -> JobLauncherApplicationRunner에서 Job Launch
+ */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
@@ -81,8 +88,7 @@ public class JobConfiguration {
 //                    return RepeatStatus.FINISHED;
 //
 //                    /**
-//                     * step이 모두 정상적으로 종료
-//                     -> JOB status : [COMPLETED]
+//                     * step이 모두 정상적으로 종료 -> JOB status : [COMPLETED]
 //                     * [COMPLETE] : JobInstance 실행 불가 → JobExecution 생성 X => 재실행 불가
 //                     * [FAILED] : JobInstance 실행 가능 → JobExecution 생성 O => 재실행 가능
 //                     */
