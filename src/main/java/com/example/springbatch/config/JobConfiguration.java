@@ -4,9 +4,12 @@ import com.example.springbatch.tasklet.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.*;
+import org.springframework.batch.core.job.builder.FlowBuilder;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.job.flow.Flow;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -27,7 +30,7 @@ public class JobConfiguration {
 
     /**
      * Batch 작업 중의 정보를 저장하는 저장소 역할
-     * Job 실행 및 결과에 관련된 모든 meta data를 저장
+     * Job 실행 및 결과에 관련된 모든 meta data를 저장 -> 기본 : SimpleJobRepository
      * JobLauncher, Job, Step 구현체 내부에서 CRUD기능 처리
      * 내부적으로 Transaction처리 해줌 -> @Transaction 불필요
      */
@@ -49,13 +52,30 @@ public class JobConfiguration {
          * -> BatchAutoConfiguration
          */
         return new JobBuilder("job", jobRepository)
-                .start(step1()) // 최소 1개 이상의 step 구성
+                .start(step1()) // 최소 1개 이상의 step 구성 // 실패시 next Step은 실행되지 않음
                 .next(step2()) // step 호출
-                .next(step3())
-                .next(step4())
                 .listener(jobRepositoryListener) // 리스너 등록
                 .build();
     }
+
+    @Bean
+    public Job job2(){
+        return new JobBuilder("job2", jobRepository)
+                .start(flow())
+                .next(step5())
+                .end()
+                .build();
+    }
+
+
+    @Bean
+    public Flow flow(){
+        return new FlowBuilder<Flow>("flow")
+                .start(step3())
+                .next(step4())
+                .build();
+    }
+
     @Bean
     public Step step1(){
         // Step 객체 생성
@@ -106,6 +126,17 @@ public class JobConfiguration {
     public Step step4(){
         return new StepBuilder("step4", jobRepository)
                 .tasklet(executionContextTasklet4, platformTransactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step step5(){
+        return new StepBuilder("step5", jobRepository)
+                .tasklet((contribution, chunkContext) -> {
+                    log.info("step5 was executed.");
+                    contribution.setExitStatus(ExitStatus.COMPLETED);
+                    return RepeatStatus.FINISHED;
+                }, platformTransactionManager)
                 .build();
     }
 }
