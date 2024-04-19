@@ -7,6 +7,7 @@ import org.springframework.batch.core.*;
 import org.springframework.batch.core.job.builder.FlowBuilder;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.job.flow.Flow;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.repeat.RepeatStatus;
@@ -54,6 +55,25 @@ public class JobConfiguration {
         return new JobBuilder("job", jobRepository)
                 .start(step1()) // 최소 1개 이상의 step 구성 // 실패시 next Step은 실행되지 않음
                 .next(step2()) // step 호출
+                .incrementer(new RunIdIncrementer()) // DB를 초기화 하지 않고 재시작 할 수있도록 Job Param의 id를 증가 시킴
+                .validator(new JobParametersValidator() {
+                    @Override
+                    public void validate(JobParameters parameters) throws JobParametersInvalidException {
+
+                    }
+                })
+                .preventRestart()
+                .listener(new JobExecutionListener() {
+                    @Override
+                    public void beforeJob(JobExecution jobExecution) {
+                        JobExecutionListener.super.beforeJob(jobExecution);
+                    }
+
+                    @Override
+                    public void afterJob(JobExecution jobExecution) {
+                        JobExecutionListener.super.afterJob(jobExecution);
+                    }
+                })
                 .listener(jobRepositoryListener) // 리스너 등록
                 .build();
     }

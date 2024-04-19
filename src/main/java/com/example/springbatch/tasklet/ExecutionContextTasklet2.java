@@ -1,6 +1,8 @@
 package com.example.springbatch.tasklet;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -25,6 +27,11 @@ public class ExecutionContextTasklet2 implements Tasklet {
         if(stepExecutionContext.get("stepName") == null){
             stepExecutionContext.put("stepName", stepName);
         }
+
+        // step의 exit code = FAILED
+//        chunkContext.getStepContext().getStepExecution().setStatus(BatchStatus.FAILED);
+        // job의 exit code = STOPPED
+//        contribution.setExitStatus(ExitStatus.STOPPED);
 
         return RepeatStatus.FINISHED;
     }
