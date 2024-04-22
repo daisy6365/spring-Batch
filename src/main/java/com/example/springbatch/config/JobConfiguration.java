@@ -1,9 +1,11 @@
 package com.example.springbatch.config;
 
+import com.example.springbatch.CustomJobParmetersValidator;
 import com.example.springbatch.tasklet.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.*;
+import org.springframework.batch.core.job.DefaultJobParametersValidator;
 import org.springframework.batch.core.job.builder.FlowBuilder;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.job.flow.Flow;
@@ -53,15 +55,15 @@ public class JobConfiguration {
          * -> BatchAutoConfiguration
          */
         return new JobBuilder("job", jobRepository)
+                // SimpleJobBuilder 생성 후 반환
                 .start(step1()) // 최소 1개 이상의 step 구성 // 실패시 next Step은 실행되지 않음
+                // 순차적으로 연결하도록 설정. 여러번 설정이 가능함
                 .next(step2()) // step 호출
-                .incrementer(new RunIdIncrementer()) // DB를 초기화 하지 않고 재시작 할 수있도록 Job Param의 id를 증가 시킴
-                .validator(new JobParametersValidator() {
-                    @Override
-                    public void validate(JobParameters parameters) throws JobParametersInvalidException {
-
-                    }
-                })
+//                .incrementer(new RunIdIncrementer()) // DB를 초기화 하지 않고 재시작 할 수있도록 Job Param의 id를 증가 시킴
+                // job 실행에 꼭 필요한 Parameter를 검증하는 용도
+//                .validator(new CustomJobParmetersValidator())
+                // requiredKeys (필수값), optionalKeys(선택값) - 자동검증
+                .validator(new DefaultJobParametersValidator(new String[]{"name", "date"}, new String[]{"count"}))
                 .preventRestart()
                 .listener(new JobExecutionListener() {
                     @Override
