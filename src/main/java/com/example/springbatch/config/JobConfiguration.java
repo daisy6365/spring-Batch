@@ -1,6 +1,6 @@
 package com.example.springbatch.config;
 
-import com.example.springbatch.CustomJobParmetersValidator;
+import com.example.springbatch.simplejob.CustomJobParametersIncrementer;
 import com.example.springbatch.tasklet.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,11 +59,15 @@ public class JobConfiguration {
                 .start(step1()) // 최소 1개 이상의 step 구성 // 실패시 next Step은 실행되지 않음
                 // 순차적으로 연결하도록 설정. 여러번 설정이 가능함
                 .next(step2()) // step 호출
-//                .incrementer(new RunIdIncrementer()) // DB를 초기화 하지 않고 재시작 할 수있도록 Job Param의 id를 증가 시킴
+                // DB를 초기화 하지 않고 재시작 할 수있도록 Job Param의 id를 증가 시킴
+                // 기존의 JobParameter 변경 없이 Job을 여러번 시작하고자 할 때
+                // run.id : incrementer api를 호출하면서 생긴 run.id
+//                .incrementer(new CustomJobParametersIncrementer())
+                .incrementer(new RunIdIncrementer())
                 // job 실행에 꼭 필요한 Parameter를 검증하는 용도
 //                .validator(new CustomJobParmetersValidator())
                 // requiredKeys (필수값), optionalKeys(선택값) - 자동검증
-                .validator(new DefaultJobParametersValidator(new String[]{"name", "date"}, new String[]{"count"}))
+//                .validator(new DefaultJobParametersValidator(new String[]{"name", "date"}, new String[]{"count"}))
                 // job의 재시작 여부를 설정
                 // default : false -> 재시작 불가능
 //                .preventRestart()
