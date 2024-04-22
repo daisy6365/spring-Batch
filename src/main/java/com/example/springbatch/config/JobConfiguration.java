@@ -64,7 +64,9 @@ public class JobConfiguration {
 //                .validator(new CustomJobParmetersValidator())
                 // requiredKeys (필수값), optionalKeys(선택값) - 자동검증
                 .validator(new DefaultJobParametersValidator(new String[]{"name", "date"}, new String[]{"count"}))
-                .preventRestart()
+                // job의 재시작 여부를 설정
+                // default : false -> 재시작 불가능
+//                .preventRestart()
                 .listener(new JobExecutionListener() {
                     @Override
                     public void beforeJob(JobExecution jobExecution) {
