@@ -5,6 +5,7 @@ import com.example.springbatch.tasklet.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.*;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.DefaultJobParametersValidator;
 import org.springframework.batch.core.job.builder.FlowBuilder;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -12,10 +13,16 @@ import org.springframework.batch.core.job.flow.Flow;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.item.*;
+import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
+import org.springframework.batch.item.support.ListItemReader;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import java.util.Arrays;
 
 
 /**
@@ -30,7 +37,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
 @RequiredArgsConstructor
 public class JobConfiguration {
-
     /**
      * Batch 작업 중의 정보를 저장하는 저장소 역할
      * Job 실행 및 결과에 관련된 모든 meta data를 저장 -> 기본 : SimpleJobRepository
@@ -55,15 +61,15 @@ public class JobConfiguration {
          * -> BatchAutoConfiguration
          */
         return new JobBuilder("job", jobRepository)
-                // SimpleJobBuilder 생성 후 반환
-                .start(step1()) // 최소 1개 이상의 step 구성 // 실패시 next Step은 실행되지 않음
-                // 순차적으로 연결하도록 설정. 여러번 설정이 가능함
-                .next(step2()) // step 호출
                 // DB를 초기화 하지 않고 재시작 할 수있도록 Job Param의 id를 증가 시킴
                 // 기존의 JobParameter 변경 없이 Job을 여러번 시작하고자 할 때
                 // run.id : incrementer api를 호출하면서 생긴 run.id
 //                .incrementer(new CustomJobParametersIncrementer())
                 .incrementer(new RunIdIncrementer())
+                // SimpleJobBuilder 생성 후 반환
+                .start(step1()) // 최소 1개 이상의 step 구성 // 실패시 next Step은 실행되지 않음
+                // 순차적으로 연결하도록 설정. 여러번 설정이 가능함
+                .next(step2()) // step 호출
                 // job 실행에 꼭 필요한 Parameter를 검증하는 용도
 //                .validator(new CustomJobParmetersValidator())
                 // requiredKeys (필수값), optionalKeys(선택값) - 자동검증
@@ -71,18 +77,7 @@ public class JobConfiguration {
                 // job의 재시작 여부를 설정
                 // default : false -> 재시작 불가능
 //                .preventRestart()
-                .listener(new JobExecutionListener() {
-                    @Override
-                    public void beforeJob(JobExecution jobExecution) {
-                        JobExecutionListener.super.beforeJob(jobExecution);
-                    }
-
-                    @Override
-                    public void afterJob(JobExecution jobExecution) {
-                        JobExecutionListener.super.afterJob(jobExecution);
-                    }
-                })
-                .listener(jobRepositoryListener) // 리스너 등록
+//                .next(step3())
                 .build();
     }
 
@@ -114,6 +109,10 @@ public class JobConfiguration {
          * -> stepHandler 에서 step 실행
          */
         return new StepBuilder("step1", jobRepository)
+                .tasklet(((contribution, chunkContext) -> {
+                    log.info("step1 has executed");
+                    return RepeatStatus.FINISHED;
+                }))
                 // tasklet 방식 호출
                 // Tasklet 객체 생성
                 .tasklet(executionContextTasklet1, platformTransactionManager).build();
@@ -122,7 +121,20 @@ public class JobConfiguration {
     @Bean
     public Step step2(){
         return new StepBuilder("step2", jobRepository)
-                .tasklet(executionContextTasklet2,platformTransactionManager)
+                .<String, String>chunk(3, platformTransactionManager)
+                .reader(new ListItemReader<>(Arrays.asList("item1", "item2", "item3", "item4", "item5")))
+                .processor(new ItemProcessor<String, String>() {
+                    @Override
+                    public String process(String item) throws Exception {
+                        return item.toUpperCase();
+                    }
+                })
+                .writer(new ItemStreamWriter<String>() {
+                    @Override
+                    public void write(Chunk<? extends String> chunk) throws Exception {
+                        chunk.forEach(log::info);
+                    }
+                })
                 .build();
 //                .tasklet((contribution, chunkContext) -> {
 //                    Map<String, Object> jobParameters = chunkContext.getStepContext().getJobParameters();
