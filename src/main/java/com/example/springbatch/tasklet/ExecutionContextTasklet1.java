@@ -32,11 +32,12 @@ public class ExecutionContextTasklet1 implements Tasklet {
         ExecutionContext jobExecutionContext = contribution.getStepExecution().getJobExecution().getExecutionContext();
         ExecutionContext stepExecutionContext = contribution.getStepExecution().getExecutionContext();
 
-        log.info("jobName : {}", jobExecutionContext.get("jobName")); // null
-        log.info("stepName : {}", stepExecutionContext.get("stepName")); // null
 
         String jobName = chunkContext.getStepContext().getStepExecution().getJobExecution().getJobInstance().getJobName();
         String stepName = chunkContext.getStepContext().getStepExecution().getStepName();
+
+        log.info("jobName : {}", jobName); // null
+        log.info("stepName : {}", stepName); // null
 
         // JobExecution의 ExecutionContext JobName 저장
         if((jobExecutionContext.get("jobName")) == null){
@@ -48,6 +49,10 @@ public class ExecutionContextTasklet1 implements Tasklet {
             stepExecutionContext.put("stepName", stepName);
         }
 
+        // 반환 값에 따라 Tasklet에 의해 while 문 안에서 반복적으로 호출 됨.
+        // RepeatStatus : Tasklet 반복 여부 상태
+        // RepeatStatus.FINISHED : Tasklet 종료
+        // RepeatStatus.CONTINUABLE : Tasklet 반복
         return RepeatStatus.FINISHED;
     }
 }
