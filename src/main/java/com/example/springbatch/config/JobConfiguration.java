@@ -84,9 +84,8 @@ public class JobConfiguration {
     @Bean
     public Job job2(){
         return new JobBuilder("job2", jobRepository)
-                .start(flow())
-                .next(step5())
-                .end()
+                .start(step3())
+                .next(step4())
                 .build();
     }
 
@@ -94,8 +93,8 @@ public class JobConfiguration {
     @Bean
     public Flow flow(){
         return new FlowBuilder<Flow>("flow")
-                .start(step3())
-                .next(step4())
+                .start(step5())
+                .next(step5())
                 .build();
     }
 
@@ -158,14 +157,29 @@ public class JobConfiguration {
     @Bean
     public Step step3(){
         return new StepBuilder("step3", jobRepository)
-                .tasklet(executionContextTasklet3, platformTransactionManager)
+                .tasklet(((contribution, chunkContext) -> {
+                    log.info("step3 has executed");
+                    // step3은 성공으로 끝났기 때문에, 재시작 하면
+                    // 실행되지 않고, 데이터 재적이 되지 않음
+                    return RepeatStatus.FINISHED;
+                }), platformTransactionManager)
+                // 성공 여부와 상관없이 항상 Step을 실행하기 위한 설정
+                .allowStartIfComplete(true)
+//                .tasklet(executionContextTasklet3, platformTransactionManager)
                 .build();
     }
 
     @Bean
     public Step step4(){
         return new StepBuilder("step4", jobRepository)
-                .tasklet(executionContextTasklet4, platformTransactionManager)
+                .tasklet(((contribution, chunkContext) -> {
+//                    throw new RuntimeException("step4 was failed");
+                    return RepeatStatus.FINISHED;
+                }), platformTransactionManager)
+                // 시작 횟수를 초과한다면 ?
+                // StartLimitExceededException: Maximum start limit exceeded for step: step4StartMax: 3 에러 발생
+                .startLimit(3)
+//                .tasklet(executionContextTasklet4, platformTransactionManager)
                 .build();
     }
 
