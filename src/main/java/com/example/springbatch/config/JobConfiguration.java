@@ -10,9 +10,12 @@ import org.springframework.batch.core.job.DefaultJobParametersValidator;
 import org.springframework.batch.core.job.builder.FlowBuilder;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.job.flow.Flow;
+import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.core.step.job.DefaultJobParametersExtractor;
+import org.springframework.batch.core.step.job.JobParametersExtractor;
 import org.springframework.batch.item.*;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
 import org.springframework.batch.item.support.ListItemReader;
@@ -89,6 +92,23 @@ public class JobConfiguration {
                 .build();
     }
 
+    @Bean Job parentJob(){
+        // 1. parentJob 실행
+        //    - param : date
+        // 2. jobStep 실행
+        // 3. childJob 실행 -> 독립적으로 Job 저장 됨
+        //    - param : date, name (added)
+        // 4. step3 실행
+        // 5. step4 실행
+        // 6. step2 실행
+
+        // childJob이 실행 도중 실패한다면
+        // 다음으로 넘어가지 못하고 parentJob의 결과도 실패
+        return new JobBuilder(("parentJob"), jobRepository)
+                .start(jobStep(null))
+                .next(step2())
+                .build();
+    }
 
     @Bean
     public Flow flow(){
@@ -161,10 +181,11 @@ public class JobConfiguration {
                     log.info("step3 has executed");
                     // step3은 성공으로 끝났기 때문에, 재시작 하면
                     // 실행되지 않고, 데이터 재적이 되지 않음
+//                    throw new RuntimeException("step3 was failed");
                     return RepeatStatus.FINISHED;
                 }), platformTransactionManager)
                 // 성공 여부와 상관없이 항상 Step을 실행하기 위한 설정
-                .allowStartIfComplete(true)
+//                .allowStartIfComplete(true)
 //                .tasklet(executionContextTasklet3, platformTransactionManager)
                 .build();
     }
@@ -174,6 +195,7 @@ public class JobConfiguration {
         return new StepBuilder("step4", jobRepository)
                 .tasklet(((contribution, chunkContext) -> {
 //                    throw new RuntimeException("step4 was failed");
+                    log.info("step4 has executed");
                     return RepeatStatus.FINISHED;
                 }), platformTransactionManager)
                 // 시작 횟수를 초과한다면 ?
@@ -193,4 +215,41 @@ public class JobConfiguration {
                 }, platformTransactionManager)
                 .build();
     }
+
+    public Step jobStep(JobLauncher jobLauncher) {
+        return new StepBuilder("jobStep",jobRepository)
+                .job(childJob())
+                .launcher(jobLauncher)
+                .parametersExtractor(jobParametersExtractor())
+                .listener(new StepExecutionListener() {
+                    @Override
+                    public void beforeStep(StepExecution stepExecution) {
+                        StepExecutionListener.super.beforeStep(stepExecution);
+                        stepExecution.getExecutionContext().putString("name", "user1");
+                    }
+
+                    @Override
+                    public ExitStatus afterStep(StepExecution stepExecution) {
+                        return StepExecutionListener.super.afterStep(stepExecution);
+                    }
+                })
+                .build();
+    }
+
+    @Bean
+    public Job childJob() {
+        return new JobBuilder("childJob", jobRepository)
+                .start(step3())
+                .next(step4())
+                .build();
+    }
+
+    private DefaultJobParametersExtractor jobParametersExtractor() {
+        DefaultJobParametersExtractor extractor = new DefaultJobParametersExtractor();
+        // sqlContext에 저장된 Key 중에서 name을 찾아서 가져옴
+        extractor.setKeys(new String[]{"name"});
+
+        return extractor;
+    }
+
 }
