@@ -26,6 +26,7 @@ import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.Arrays;
+import java.util.Map;
 
 
 /**
@@ -85,6 +86,21 @@ public class JobConfiguration {
     }
 
     @Bean
+    public Job flowJob(){
+        return new JobBuilder("flowJob", jobRepository)
+                // FLOW JOB 예시
+                .start(step1())
+                .on("COMPLETED").to(step3())
+                .from(step1())
+                .on("FAILED").to(step2())
+                .end()
+                // flow가 end로 인해 종료되면서
+                // build() -> simple flow 객체를 생성 -> Flow job 생성
+                // Simple Flow 가 모든 제어를 함
+                .build();
+    }
+
+    @Bean
     public Job job2(){
         return new JobBuilder("job2", jobRepository)
                 .start(step3())
@@ -130,11 +146,13 @@ public class JobConfiguration {
         return new StepBuilder("step1", jobRepository)
                 .tasklet(((contribution, chunkContext) -> {
                     log.info("step1 has executed");
+//                    throw new RuntimeException("step1 was failed.");
                     return RepeatStatus.FINISHED;
-                }))
+                }),platformTransactionManager)
                 // tasklet 방식 호출
                 // Tasklet 객체 생성
-                .tasklet(executionContextTasklet1, platformTransactionManager).build();
+//                .tasklet(executionContextTasklet1, platformTransactionManager)
+                .build();
     }
 
     @Bean
@@ -156,9 +174,9 @@ public class JobConfiguration {
                 })
                 .build();
 //                .tasklet((contribution, chunkContext) -> {
-//                    Map<String, Object> jobParameters = chunkContext.getStepContext().getJobParameters();
+////                    Map<String, Object> jobParameters = chunkContext.getStepContext().getJobParameters();
 //
-//                    log.info("jobParameters = {}", jobParameters.toString());
+////                    log.info("jobParameters = {}", jobParameters.toString());
 //                    // jobParameters = {date=Mon Mar 11 14:57:41 KST 2024, name=user1, seq=2, age=16.5}
 //                    log.info("step2 is executed.");
 //                    contribution.setExitStatus(ExitStatus.COMPLETED);
