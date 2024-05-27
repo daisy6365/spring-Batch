@@ -85,20 +85,6 @@ public class JobConfiguration {
                 .build();
     }
 
-    @Bean
-    public Job flowJob(){
-        return new JobBuilder("flowJob", jobRepository)
-                // FLOW JOB 예시
-                .start(step1())
-                .on("COMPLETED").to(step3())
-                .from(step1())
-                .on("FAILED").to(step2())
-                .end()
-                // flow가 end로 인해 종료되면서
-                // build() -> simple flow 객체를 생성 -> Flow job 생성
-                // Simple Flow 가 모든 제어를 함
-                .build();
-    }
 
     @Bean
     public Job job2(){
@@ -126,13 +112,51 @@ public class JobConfiguration {
                 .build();
     }
 
+
     @Bean
-    public Flow flow(){
-        return new FlowBuilder<Flow>("flow")
-                .start(step5())
+    public Job flowJob1(){
+        return new JobBuilder("flowJob1", jobRepository)
+                // FLOW JOB 예시
+                .start(step1())
+                .on("COMPLETED").to(step3())
+                .from(step1())
+                .on("FAILED").to(step2())
+                .end()
+                // flow가 end로 인해 종료되면서
+                // build() -> simple flow 객체를 생성 -> Flow job 생성
+                // Simple Flow 가 모든 제어를 함
+                .build();
+    }
+
+    @Bean
+    public Job flowJob2(){
+        return new JobBuilder("flowJob2", jobRepository)
+                // start : 처음 실행할 Flow 설정, JobFlowBuilder 반환
+                // step이 인자로 오게 되면 SimpleJobBuiler 반환
+                .start(flowA())
+                .next(step3())
+                .next(flowB())
+                .next(step6())
+                .end()
+                .build();
+    }
+
+    @Bean
+    public Flow flowA(){
+        return new FlowBuilder<Flow>("flowA")
+                .start(step1())
+                .next(step2())
+                .build();
+    }
+
+    @Bean
+    public Flow flowB(){
+        return new FlowBuilder<Flow>("flowB")
+                .start(step4())
                 .next(step5())
                 .build();
     }
+
 
     @Bean
     public Step step1(){
@@ -228,6 +252,17 @@ public class JobConfiguration {
         return new StepBuilder("step5", jobRepository)
                 .tasklet((contribution, chunkContext) -> {
                     log.info("step5 was executed.");
+                    contribution.setExitStatus(ExitStatus.COMPLETED);
+                    return RepeatStatus.FINISHED;
+                }, platformTransactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step step6(){
+        return new StepBuilder("step6", jobRepository)
+                .tasklet((contribution, chunkContext) -> {
+                    log.info("step6 was executed.");
                     contribution.setExitStatus(ExitStatus.COMPLETED);
                     return RepeatStatus.FINISHED;
                 }, platformTransactionManager)
