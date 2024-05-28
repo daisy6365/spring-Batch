@@ -171,6 +171,12 @@ public class JobConfiguration {
                 .tasklet(((contribution, chunkContext) -> {
                     log.info("step1 has executed");
 //                    throw new RuntimeException("step1 was failed.");
+                    // Batch status와 exit status가 통일하게 가지 않음
+                    // SimplJob
+                    // 마지막 step - ExitStatus -> Job 최종 ExitStatus로 변경
+                    // FlowJob
+                    // 마지막 flow - FlowExecutionStatus -> Job 최종 ExitStatus로 변경
+                    contribution.setExitStatus(ExitStatus.FAILED);
                     return RepeatStatus.FINISHED;
                 }),platformTransactionManager)
                 // tasklet 방식 호출
