@@ -1,5 +1,6 @@
 package com.example.springbatch.config;
 
+import com.example.springbatch.listener.PassCheckingListener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.ExitStatus;
@@ -42,17 +43,21 @@ public class FlowJobConfiguration {
                     // to()
                     // 다음으로 실행할 단계를 지정
                     .to(flowStep2())
-                    .on("FAILED")
+                    .on("PASS")
+                // 이상태로 끝난다면! JOB은 COMPLETE가 아닌 FAILED가 됨
+                // 이유? -> step2에 대한 결과를 트랜지션으로 정의하지 않았기 때문에
+                // 현재 코드는 PASS의 결과를 받으려 하지만 COMPLETE로 보냄
+                // 특정 결과(PASS)에 만족하지 못할 경우에는 JOB -> FAILED 처리
                     .stop()
                 // from()
                 // 이전 단계에서 정의한 Transition을 새롭게 추가 정의
-                .from(flowStep1())
-                    .on("*")
-                    .to(flowStep3())
-                    .next(flowStep4())
-                .from(flowStep2())
-                    .on("*")
-                    .to(flowStep5())
+//                .from(flowStep1())
+//                    .on("*")
+//                    .to(flowStep3())
+//                    .next(flowStep4())
+//                .from(flowStep2())
+//                    .on("*")
+//                    .to(flowStep5())
                 // end 하는 순간 : Simple Flow 객체 생성
                 .end().build();
     }
@@ -84,6 +89,7 @@ public class FlowJobConfiguration {
                     contribution.setExitStatus(ExitStatus.COMPLETED);
                     return RepeatStatus.FINISHED;
                 }, platformTransactionManager)
+                .listener(new PassCheckingListener())
                 .build();
     }
 
