@@ -36,17 +36,38 @@ public class SimpleFlowConfiguration {
     @Bean
     public Job SimpleFlowJob(){
         return new JobBuilder("simpleFlowJob", jobRepository)
-                .start(flow())
-                .next(simpleFlowstep3())
+                .start(flow1())
+                    .on("COMPLETED")
+                    .to(flow2())
+                .from(flow1())
+                    .on("FAILED")
+                    .to(flow3())
                 .end() // Simple Flow 객체를 생성함
                 .build();
     }
 
     @Bean
-    public Flow flow(){
-        return new FlowBuilder<Flow>("flow")
+    public Flow flow1(){
+        return new FlowBuilder<Flow>("flow1")
                 .start(simpleFlowstep1())
                 .next(simpleFlowstep2())
+                .build();
+    }
+
+    @Bean
+    public Flow flow2(){
+        return new FlowBuilder<Flow>("flow2")
+                .start(flow3())
+                .next(simpleFlowstep5())
+                .next(simpleFlowstep6())
+                .build();
+    }
+
+    @Bean
+    public Flow flow3(){
+        return new FlowBuilder<Flow>("flow3")
+                .start(simpleFlowstep3())
+                .next(simpleFlowstep4())
                 .build();
     }
 
@@ -55,6 +76,7 @@ public class SimpleFlowConfiguration {
         return new StepBuilder("simpleFlowstep1",jobRepository)
                 .tasklet(((contribution, chunkContext) -> {
                     log.info("step1 has executed.");
+//                    throw new RuntimeException("An error has occurred.");
                     return RepeatStatus.FINISHED;
                 }), platformTransactionManager)
                 .build();
@@ -79,4 +101,35 @@ public class SimpleFlowConfiguration {
                 }), platformTransactionManager)
                 .build();
     }
+
+    @Bean
+    public Step simpleFlowstep4(){
+        return new StepBuilder("simpleFlowstep4",jobRepository)
+                .tasklet(((contribution, chunkContext) -> {
+                    log.info("step4 has executed.");
+                    return RepeatStatus.FINISHED;
+                }), platformTransactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step simpleFlowstep5(){
+        return new StepBuilder("simpleFlowstep5",jobRepository)
+                .tasklet(((contribution, chunkContext) -> {
+                    log.info("step5 has executed.");
+                    return RepeatStatus.FINISHED;
+                }), platformTransactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step simpleFlowstep6(){
+        return new StepBuilder("simpleFlowstep6",jobRepository)
+                .tasklet(((contribution, chunkContext) -> {
+                    log.info("step6 has executed.");
+                    return RepeatStatus.FINISHED;
+                }), platformTransactionManager)
+                .build();
+    }
+
 }
