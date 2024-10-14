@@ -30,14 +30,22 @@ public class SimpleFlowConfiguration {
      * - SimpleFlow : flow or step 저장
      * - flow : state가 존재. 내부적으로 가지고 있는 flow나 step을 실행 시킴
      * - FlowBuilder : state를 생성하고 step or flow를 저장
-     * - SimpleFlow
+     * - SimpleFlow : 모든 Flow들을 제어
+     *
+     * Transition
+     * List<StateTransition>으로 생성 됨 : 각각의 Transition 정보를 담고 있음
+     * 1) state : 현재 State
+     * 2) pattern : on() Transition
+     * 3) next : 다음 State
+     * * FlowBuilder가 각각의 타입에 따라 State 캡쳐를 정상화
+     *
      */
 
     @Bean
     public Job SimpleFlowJob(){
         return new JobBuilder("simpleFlowJob", jobRepository)
                 .start(flow1())
-                    .on("COMPLETED")
+                    .on("*")
                     .to(flow2())
                 .from(flow1())
                     .on("FAILED")
@@ -67,7 +75,7 @@ public class SimpleFlowConfiguration {
     public Flow flow3(){
         return new FlowBuilder<Flow>("flow3")
                 .start(simpleFlowstep3())
-                .next(simpleFlowstep4())
+                .on("*").to(simpleFlowstep4())
                 .build();
     }
 
