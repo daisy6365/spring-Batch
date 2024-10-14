@@ -44,13 +44,22 @@ public class SimpleFlowConfiguration {
     @Bean
     public Job SimpleFlowJob(){
         return new JobBuilder("simpleFlowJob", jobRepository)
-                .start(flow1())
-                    .on("*")
-                    .to(flow2())
-                .from(flow1())
+                .start(simpleFlowstep1())
+                    .on("COMPLETED")
+                    .to(simpleFlowstep2())
+                .from(simpleFlowstep1())
                     .on("FAILED")
-                    .to(flow3())
+                    .to(flow())
                 .end() // Simple Flow 객체를 생성함
+                .build();
+    }
+
+    @Bean
+    public Flow flow(){
+        return new FlowBuilder<Flow>("flow")
+                .start(simpleFlowstep2())
+                .on("*")
+                .to(simpleFlowstep3())
                 .build();
     }
 
