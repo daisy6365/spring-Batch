@@ -44,7 +44,7 @@ public class SimpleFlowConfiguration {
     @Bean
     public Job SimpleFlowJob(){
         return new JobBuilder("simpleFlowJob", jobRepository)
-                .start(simpleFlowstep1())
+                .start(flowStep())
                     .on("COMPLETED")
                     .to(simpleFlowstep2())
                 .from(simpleFlowstep1())
@@ -85,6 +85,13 @@ public class SimpleFlowConfiguration {
         return new FlowBuilder<Flow>("flow3")
                 .start(simpleFlowstep3())
                 .on("*").to(simpleFlowstep4())
+                .build();
+    }
+
+    @Bean
+    public Step flowStep(){
+        return new StepBuilder("flowStep", jobRepository)
+                .flow(flow())
                 .build();
     }
 
