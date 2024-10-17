@@ -36,9 +36,11 @@ public class JobScopeAndStepScopeConfiguration {
     }
 
     @Bean
-    @JobScope
+    @JobScope // annotation이 없다면, Singleton Bean이 생성되기 때문에 @Value사용시에 오류 발생
     public Step scopeStep1(@Value("#{jobParameters['message']}") String message) {
         // step1이 생성되는 시점에 해당하는 parameter값이 설정됨
+        // Bean이 존재 O -> 정확히는 proxy가 Step의 메서드를 실행시키는 시점에 Step Bean 이 생성되고, @Value 바인딩 처리가 이루어짐
+        // Bean이 존재 X -> JobContext에서 Step Bean을 꺼냄
         log.info("scopeStep1 message = {}", message);
         return new StepBuilder("scopeStep1", jobRepository)
                 .tasklet(scopeTasklet1(null), platformTransactionManager)
@@ -48,8 +50,7 @@ public class JobScopeAndStepScopeConfiguration {
     @Bean
     @StepScope
     public Tasklet scopeTasklet1(@Value("#{jobExecutionContext['name1']}") String name1) {
-        // 초기화 시점에 리스너에서 설정한
-        // jobEecution에 존재하는 name1의 값을 참조함
+        // 초기화 시점에 리스너에서 설정한 jobEecution에 존재하는 name1의 값을 참조함
         log.info("scopeTasklet1 name1 = {}", name1);
         return (contribution, chunkContext) -> {
             log.info("scopeTasklet1 executed.");
