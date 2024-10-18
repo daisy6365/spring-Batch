@@ -55,6 +55,25 @@ public class ChunkConfiguration {
     private final JobRepository jobRepository;
     private final PlatformTransactionManager platformTransactionManager;
 
+    /**
+     * TaskletStep
+     * tasklet 반복 실행 -> 말했듯이, chunk 프로세스 자체가 tasklet을 기반으로 구현하여 반복문 처리한 것
+     * stepsOperations.iterate(new StepContextRepeatCallbak(stepExecution))
+     * boolean 타입으로 실행 여부를 판단함
+     *
+     * ChunkProvider -> provide 메소드를 호출할 때마다 chunk를 생성
+     * 내부적으로 repeat Template을 가지고 있음 -> 반복적으로 수행
+     * 반복문 안에서 item을 read()
+     * item을 다 읽었을 경우, list에는 아무것도 없음 -> RepeatStatus.FINISHED;
+     * Chunk<I>.add(item)
+     * getStartedCount()(item을 한번씩 읽은 갯수) >= chunksize -> chunk 단위 만큼 수행 했다는 의미
+     * -> 반복문 끝냄 -> ChunkProcessor로 감
+     *
+     * ChunkProcessor
+     * 내부적으로 for 문을 돌면서 아이템들을 하나씩 읽어 냄 -> doProcess() 호출
+     * incrementFilterCount()에서 필터링한 횟수를 추가함
+     * input.isEnd() 값에 따라 다음 단계로 갈지 여부에 대한 결과를 세팅 함
+     */
     @Bean
     public Job chunkJob(){
         return new JobBuilder("chunkJob", jobRepository)
@@ -103,8 +122,9 @@ public class ChunkConfiguration {
                      */
                     @Override
                     public void write(Chunk<? extends String> chunk) throws Exception {
-                        Thread.sleep(300);
-                        log.info("ItemWriter items = " + chunk);
+//                        Thread.sleep(300);
+//                        log.info("ItemWriter items = " + chunk);
+                        chunk.forEach(log::info); // chunk안에 있는 item을 로깅
                     }
                 })
                .build();
